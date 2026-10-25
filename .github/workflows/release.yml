@@ -1,4 +1,5 @@
-# Analiza cada push a main y, con una etiqueta v*, compila los ejecutables y publica la release.
+# Analiza y compila cada push a main; con una etiqueta v*, publica la release con los paquetes
+# de x64 y arm64. Se compila en Ubuntu 22.04 para que funcione con glibc antiguas.
 name: release
 
 on:
@@ -10,32 +11,61 @@ on:
 permissions:
   contents: write
 
+env:
+  FLUTTER_VERSION: 3.47.8
+
 jobs:
   build:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-22.04
+            arch: x64
+          - runner: ubuntu-22.04-arm
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
-      - uses: dart-lang/setup-dart@v1
-        with:
-          sdk: stable
-      - run: dart pub get
-      - run: dart analyze --fatal-infos
+      - name: Dependencias de compilación
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev
+      # se clona Flutter en vez de usar el tar oficial porque este solo existe para x64
+      - name: Flutter
+        run: |
+          git clone --depth 1 -b "$FLUTTER_VERSION" https://github.com/flutter/flutter.git "$RUNNER_TEMP/flutter"
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+      - run: flutter --disable-analytics && flutter pub get
+      - run: flutter analyze --fatal-infos
       - name: Comprobar que la versión coincide con la etiqueta
         if: startsWith(github.ref, 'refs/tags/')
         run: |
           v="$(sed -n 's/^version: *//p' pubspec.yaml)"
           test "v$v" = "$GITHUB_REF_NAME"
-          grep -q "const version = '$v';" lib/src/app.dart
-      - name: Compilar x64 y arm64
+          grep -q "const version = '$v';" lib/src/controller.dart
+      - run: flutter build linux --release
+      - name: Empaquetar
         run: |
-          mkdir -p build
-          for arch in x64 arm64; do
-            dart compile exe --target-os=linux --target-arch=$arch bin/darttracker.dart -o build/darttracker-linux-$arch
-          done
+          mkdir -p dist
+          cp -r build/linux/${{ matrix.arch }}/release/bundle dist/darttracker
+          tar -C dist -czf darttracker-linux-${{ matrix.arch }}.tar.gz darttracker
+      - uses: actions/upload-artifact@v4
+        with:
+          name: darttracker-linux-${{ matrix.arch }}
+          path: darttracker-linux-${{ matrix.arch }}.tar.gz
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
       - name: Publicar la release
-        if: startsWith(github.ref, 'refs/tags/')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" build/darttracker-linux-x64 build/darttracker-linux-arm64 \
+          gh release create "$GITHUB_REF_NAME" darttracker-linux-x64.tar.gz darttracker-linux-arm64.tar.gz \
             --title "DartTracker ${GITHUB_REF_NAME#v}" --generate-notes

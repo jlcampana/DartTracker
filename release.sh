@@ -5,8 +5,8 @@ set -euo pipefail
 cd "$(dirname "$(readlink -f "$0")")"
 
 VERSION="$(sed -n 's/^version: *//p' pubspec.yaml)"
-grep -q "const version = '$VERSION';" lib/src/app.dart \
-    || { echo "La versión de lib/src/app.dart no coincide con pubspec.yaml ($VERSION)" >&2; exit 1; }
+grep -q "const version = '$VERSION';" lib/src/controller.dart \
+    || { echo "La versión de lib/src/controller.dart no coincide con pubspec.yaml ($VERSION)" >&2; exit 1; }
 [[ -z "$(git status --porcelain)" ]] || { echo "Hay cambios sin confirmar" >&2; exit 1; }
 
 git tag -a "v$VERSION" -m "DartTracker $VERSION"

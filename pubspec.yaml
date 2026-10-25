@@ -1,17 +1,27 @@
 name: darttracker
-description: Explorador de modarchive.org y reproductor de música tracker para la terminal.
-version: 1.1.0
+description: Explorador de modarchive.org y reproductor de música tracker para el escritorio.
+version: 2.0.0
 publish_to: none
 repository: https://github.com/jlcampana/DartTracker
 
 environment:
-  sdk: ^3.7.0
+  sdk: ^3.13.0
+  flutter: ">=3.47.0"
 
 dependencies:
+  flutter:
+    sdk: flutter
   crypto: ^3.0.6
-  # 2.x usa la libsqlite3 del sistema; la 3.x compila su propia copia con build hooks
-  # y ya no sale un único ejecutable.
+  # 2.x usa la libsqlite3 del sistema; la 3.x compila su propia copia con build hooks.
   sqlite3: 2.9.4
+  yaru: ^11.0.0
 
 dev_dependencies:
-  lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/darttracker.svg

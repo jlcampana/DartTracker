@@ -3,14 +3,17 @@
 #
 # Sin clonar nada:
 #   curl -fsSL https://raw.githubusercontent.com/jlcampana/DartTracker/main/install.sh | bash
-# Desde una copia del repositorio:  ./install.sh  (compila con dart si lo tienes)
+# Desde una copia del repositorio:  ./install.sh  (compila con flutter si lo tienes)
 #
-# Instala openmpt123 y SQLite (pide sudo), descarga el ejecutable de la última release de GitHub
-# y lo deja en ~/.local/bin/darttracker, con su icono en el menú de aplicaciones. Volver a ejecutarlo actualiza la aplicación.
+# Instala openmpt123, GTK y SQLite (pide sudo), descarga la última release de GitHub en
+# ~/.local/share/darttracker, enlaza el comando darttracker en ~/.local/bin y añade la aplicación
+# al menú con su icono. Volver a ejecutarlo actualiza la aplicación.
 set -euo pipefail
 
 REPO="jlcampana/DartTracker"
+APP_ID="io.github.jlcampana.darttracker"
 BIN_DIR="$HOME/.local/bin"
+DEST="$HOME/.local/share/darttracker"
 
 # Todo va dentro de main() para que bash lea el script entero antes de ejecutarlo: con
 # 'curl | bash' el script llega por la entrada estándar y dnf/apt podrían comerse el resto.
@@ -22,7 +25,7 @@ main() {
 case " ${ID:-} ${ID_LIKE:-} " in
     *" fedora "*)
         echo "==> Instalando paquetes del sistema (dnf)"
-        sudo dnf install -y curl sqlite-libs openmpt123
+        sudo dnf install -y curl tar gtk3 sqlite-libs openmpt123
         ;;
     *" debian "*|*" ubuntu "*)
         echo "==> Instalando paquetes del sistema (apt)"
@@ -33,62 +36,68 @@ case " ${ID:-} ${ID_LIKE:-} " in
             sudo add-apt-repository -y universe
         fi
         sudo apt-get update
-        sudo apt-get install -y curl libsqlite3-0 openmpt123
+        # en Ubuntu 24.04+ la biblioteca de GTK se llama libgtk-3-0t64
+        GTK=libgtk-3-0t64
+        apt-cache show "$GTK" >/dev/null 2>&1 || GTK=libgtk-3-0
+        sudo apt-get install -y curl tar "$GTK" libsqlite3-0 openmpt123
         ;;
     *)
         echo "Distribución no soportada (${PRETTY_NAME:-desconocida})." >&2
-        echo "Instala a mano curl, la biblioteca de SQLite y openmpt123 y vuelve a ejecutarlo." >&2
+        echo "Instala a mano curl, GTK 3, la biblioteca de SQLite y openmpt123 y vuelve a ejecutarlo." >&2
         exit 1
         ;;
 esac
 
-# ------------------------------------------------------------ ejecutable
+# ------------------------------------------------------------ aplicación
 
-mkdir -p "$BIN_DIR"
+case "$(uname -m)" in
+    x86_64|amd64) ARCH=x64 ;;
+    aarch64|arm64) ARCH=arm64 ;;
+    *) echo "Arquitectura no soportada: $(uname -m)" >&2; exit 1 ;;
+esac
+
 # Con 'curl | bash' no hay archivo de script: BASH_SOURCE está vacío o apunta a la entrada estándar.
 SRC="${BASH_SOURCE[0]:-}"
 APP_DIR=""
 if [[ -n $SRC && -f $SRC ]]; then
     APP_DIR="$(dirname "$(readlink -f "$SRC")")"
 fi
-if [[ -n $APP_DIR && -f $APP_DIR/pubspec.yaml ]] && command -v dart >/dev/null; then
+
+TMP="$(mktemp -d)"
+trap 'rm -rf "$TMP"' EXIT
+if [[ -n $APP_DIR && -f $APP_DIR/pubspec.yaml ]] && command -v flutter >/dev/null; then
     echo "==> Compilando desde $APP_DIR"
-    (cd "$APP_DIR" && dart pub get >/dev/null && dart compile exe bin/darttracker.dart -o build/darttracker)
-    install -m 755 "$APP_DIR/build/darttracker" "$BIN_DIR/darttracker"
+    (cd "$APP_DIR" && flutter build linux --release)
+    cp -r "$APP_DIR/build/linux/$ARCH/release/bundle" "$TMP/darttracker"
 else
-    case "$(uname -m)" in
-        x86_64|amd64) ARCH=x64 ;;
-        aarch64|arm64) ARCH=arm64 ;;
-        *) echo "Arquitectura no soportada: $(uname -m)" >&2; exit 1 ;;
-    esac
-    URL="https://github.com/$REPO/releases/latest/download/darttracker-linux-$ARCH"
+    URL="https://github.com/$REPO/releases/latest/download/darttracker-linux-$ARCH.tar.gz"
     echo "==> Descargando $URL"
-    TMP="$(mktemp)"
-    curl -fL --progress-bar -o "$TMP" "$URL"
-    install -m 755 "$TMP" "$BIN_DIR/darttracker"
-    rm -f "$TMP"
+    curl -fL --progress-bar "$URL" | tar -xz -C "$TMP"
 fi
+rm -rf "$DEST"
+mkdir -p "$(dirname "$DEST")" "$BIN_DIR"
+mv "$TMP/darttracker" "$DEST"
+ln -sfn "$DEST/darttracker" "$BIN_DIR/darttracker"
 
 echo "==> Añadiendo DartTracker al menú de aplicaciones"
 ICON_DIR="$HOME/.local/share/icons/hicolor/scalable/apps"
 APPS_DIR="$HOME/.local/share/applications"
 mkdir -p "$ICON_DIR" "$APPS_DIR"
-if [[ -n $APP_DIR && -f $APP_DIR/assets/darttracker.svg ]]; then
-    cp "$APP_DIR/assets/darttracker.svg" "$ICON_DIR/darttracker.svg"
-else
-    curl -fsSL -o "$ICON_DIR/darttracker.svg" "https://raw.githubusercontent.com/$REPO/main/assets/darttracker.svg"
-fi
-# Ruta absoluta en Exec: el entorno gráfico no siempre tiene ~/.local/bin en el PATH
-cat > "$APPS_DIR/darttracker.desktop" <<DESKTOP
+cp "$DEST/data/flutter_assets/assets/darttracker.svg" "$ICON_DIR/darttracker.svg"
+# El nombre del .desktop es el ID de la aplicación: así GNOME asocia la ventana con su icono.
+# Ruta absoluta en Exec: el entorno gráfico no siempre tiene ~/.local/bin en el PATH.
+rm -f "$APPS_DIR/darttracker.desktop" # versiones anteriores
+cat > "$APPS_DIR/$APP_ID.desktop" <<DESKTOP
 [Desktop Entry]
 Type=Application
 Name=DartTracker
 GenericName=Reproductor de música tracker
 Comment=Explora modarchive.org y reproduce módulos MOD, XM, S3M e IT
-Exec=$BIN_DIR/darttracker
+Exec=$DEST/darttracker
 Icon=darttracker
-Terminal=true
-Categories=AudioVideo;Audio;Player;ConsoleOnly;
+Terminal=false
+StartupWMClass=$APP_ID
+Categories=AudioVideo;Audio;Player;
 Keywords=mod;xm;s3m;it;tracker;modarchive;chiptune;música;
 DESKTOP
 gtk-update-icon-cache -q -t "$HOME/.local/share/icons/hicolor" 2>/dev/null || true
@@ -103,7 +112,7 @@ case ":$PATH:" in
        echo "  export PATH=\"\$HOME/.local/bin:\$PATH\"" ;;
 esac
 
-echo "==> Listo ($("$BIN_DIR/darttracker" --version)). Ejecuta: darttracker"
+echo "==> Listo. Abre DartTracker desde el menú de aplicaciones o con: darttracker"
 }
 
 main "$@"
