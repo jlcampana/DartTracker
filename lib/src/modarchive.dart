@@ -4,7 +4,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 const base = 'https://modarchive.org/index.php';
-const userAgent = 'Mozilla/5.0 (X11; Linux x86_64) tracker/1.0';
+const userAgent = 'Mozilla/5.0 (X11; Linux x86_64) DartTracker/1.1';
 
 String downloadUrl(int id) => 'https://api.modarchive.org/downloads.php?moduleid=$id';
 String moduleUrl(int id) => 'https://modarchive.org/index.php?request=view_by_moduleid&query=$id';

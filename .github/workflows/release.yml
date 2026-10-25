@@ -1,0 +1,41 @@
+# Analiza cada push a main y, con una etiqueta v*, compila los ejecutables y publica la release.
+name: release
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - run: dart pub get
+      - run: dart analyze --fatal-infos
+      - name: Comprobar que la versión coincide con la etiqueta
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          v="$(sed -n 's/^version: *//p' pubspec.yaml)"
+          test "v$v" = "$GITHUB_REF_NAME"
+          grep -q "const version = '$v';" lib/src/app.dart
+      - name: Compilar x64 y arm64
+        run: |
+          mkdir -p build
+          for arch in x64 arm64; do
+            dart compile exe --target-os=linux --target-arch=$arch bin/darttracker.dart -o build/darttracker-linux-$arch
+          done
+      - name: Publicar la release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" build/darttracker-linux-x64 build/darttracker-linux-arm64 \
+            --title "DartTracker ${GITHUB_REF_NAME#v}" --generate-notes

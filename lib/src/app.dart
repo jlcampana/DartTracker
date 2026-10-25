@@ -12,7 +12,7 @@ import 'modarchive.dart';
 import 'player.dart';
 import 'ui.dart';
 
-const version = '1.0.0';
+const version = '1.1.0';
 
 final home = Platform.environment['HOME'] ?? '.';
 final musicDir = Platform.environment['TRACKER_DIR'] ?? '$home/Música/Tracker';
@@ -895,10 +895,12 @@ class App {
     c.text(4, 0, '●', fg: C.yellow);
     c.text(6, 0, '●', fg: C.green);
     c.hit(2, 0, 1, 1, onClick: (_, _) => quit());
-    final title = 'Tracker';
+    const title = 'DartTracker';
     final sub = pane == 'explore' ? '  ·  Explorar modarchive' : '  ·  Biblioteca';
     final tx = (w - textWidth(title + sub)) ~/ 2;
-    c.text(tx + c.text(tx, 0, title, attr: bold), 0, sub, fg: C.secondary);
+    c.text(tx, 0, 'Dart', fg: C.accent, attr: bold);
+    c.text(tx + 4, 0, 'Tracker', attr: bold);
+    c.text(tx + title.length, 0, sub, fg: C.secondary);
     // pestañas tipo control segmentado, a la derecha
     var x = w - 30;
     if (tx + textWidth(title + sub) + 2 > x) return;

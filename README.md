@@ -1,4 +1,4 @@
-# tracker
+# DartTracker
 
 Explorador de [The Mod Archive](https://modarchive.org) y reproductor de música tracker
 (MOD, XM, S3M, IT y [muchos más formatos](https://lib.openmpt.org/libopenmpt/)) para la terminal,
@@ -15,12 +15,13 @@ queda en una biblioteca local que puedes escuchar sin conexión.
 Sin clonar nada (Fedora y Ubuntu / Debian, x86_64 y arm64):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/jlcampana/tracker/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/jlcampana/DartTracker/main/install.sh | bash
 ```
 
 El script instala `openmpt123` y la biblioteca de SQLite (pide `sudo`), descarga el ejecutable de la
-última [release](https://github.com/jlcampana/tracker/releases) y lo deja en `~/.local/bin/tracker`.
-Volver a ejecutar la misma línea lo actualiza. No hace falta tener Dart instalado.
+última [release](https://github.com/jlcampana/DartTracker/releases) y lo deja en `~/.local/bin/darttracker`.
+Volver a ejecutar la misma línea lo actualiza. No hace falta tener Dart instalado. El comando se llama
+`darttracker`, así que puede convivir con el `tracker` de python-tracker.
 
 Desde una copia del repositorio, `./install.sh` compila con `dart` si lo tienes y, si no, descarga
 la release igual que antes.
@@ -53,7 +54,7 @@ la release igual que antes.
 ## Uso
 
 ```bash
-tracker
+darttracker
 ```
 
 Todo se puede hacer con el teclado o con el ratón (clic en la barra lateral, en las filas, en los
@@ -104,12 +105,13 @@ Son las mismas rutas que usa python-tracker, así que las dos versiones comparte
 
 ```bash
 dart pub get
-dart run bin/tracker.dart
+dart run bin/darttracker.dart
 dart analyze
 ```
 
-Para publicar una versión nueva: sube `version` en `pubspec.yaml` y en `lib/src/app.dart` y ejecuta
-`./release.sh`, que compila los ejecutables para x64 y arm64 y crea la release con `gh`.
+Para publicar una versión nueva: sube `version` en `pubspec.yaml` y en `lib/src/app.dart`, haz commit
+y ejecuta `./release.sh`. Sube la etiqueta `v<versión>` y GitHub Actions compila los ejecutables para
+x64 y arm64 y publica la release.
 
 El código está en `lib/src/`: `modarchive.dart` (descargas y parsers del HTML de modarchive, que no
 tiene API pública sin clave), `library.dart` (SQLite), `player.dart` (openmpt123 y vúmetro),

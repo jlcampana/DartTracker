@@ -2,20 +2,20 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:tracker/src/app.dart';
+import 'package:darttracker/src/app.dart';
 
 Future<void> main(List<String> args) async {
   if (args.contains('--version') || args.contains('-v')) {
-    stdout.writeln('tracker $version');
+    stdout.writeln('DartTracker $version');
     return;
   }
   if (args.contains('--help') || args.contains('-h')) {
-    stdout.writeln('Uso: tracker\n\nExplorador de modarchive.org y reproductor de música tracker.\n'
+    stdout.writeln('Uso: darttracker\n\nDartTracker: explorador de modarchive.org y reproductor de música tracker.\n'
         'Las canciones se guardan en $musicDir (variable TRACKER_DIR) y la base de datos en $dbPath.');
     return;
   }
   if (!stdin.hasTerminal || !stdout.hasTerminal) {
-    stderr.writeln('tracker necesita una terminal interactiva.');
+    stderr.writeln('darttracker necesita una terminal interactiva.');
     exit(1);
   }
   try {
