@@ -6,7 +6,7 @@
 # Desde una copia del repositorio:  ./install.sh  (compila con dart si lo tienes)
 #
 # Instala openmpt123 y SQLite (pide sudo), descarga el ejecutable de la última release de GitHub
-# y lo deja en ~/.local/bin/darttracker. Volver a ejecutarlo actualiza la aplicación.
+# y lo deja en ~/.local/bin/darttracker, con su icono en el menú de aplicaciones. Volver a ejecutarlo actualiza la aplicación.
 set -euo pipefail
 
 REPO="jlcampana/DartTracker"
@@ -68,6 +68,31 @@ else
     install -m 755 "$TMP" "$BIN_DIR/darttracker"
     rm -f "$TMP"
 fi
+
+echo "==> Añadiendo DartTracker al menú de aplicaciones"
+ICON_DIR="$HOME/.local/share/icons/hicolor/scalable/apps"
+APPS_DIR="$HOME/.local/share/applications"
+mkdir -p "$ICON_DIR" "$APPS_DIR"
+if [[ -n $APP_DIR && -f $APP_DIR/assets/darttracker.svg ]]; then
+    cp "$APP_DIR/assets/darttracker.svg" "$ICON_DIR/darttracker.svg"
+else
+    curl -fsSL -o "$ICON_DIR/darttracker.svg" "https://raw.githubusercontent.com/$REPO/main/assets/darttracker.svg"
+fi
+# Ruta absoluta en Exec: el entorno gráfico no siempre tiene ~/.local/bin en el PATH
+cat > "$APPS_DIR/darttracker.desktop" <<DESKTOP
+[Desktop Entry]
+Type=Application
+Name=DartTracker
+GenericName=Reproductor de música tracker
+Comment=Explora modarchive.org y reproduce módulos MOD, XM, S3M e IT
+Exec=$BIN_DIR/darttracker
+Icon=darttracker
+Terminal=true
+Categories=AudioVideo;Audio;Player;ConsoleOnly;
+Keywords=mod;xm;s3m;it;tracker;modarchive;chiptune;música;
+DESKTOP
+gtk-update-icon-cache -q -t "$HOME/.local/share/icons/hicolor" 2>/dev/null || true
+update-desktop-database -q "$APPS_DIR" 2>/dev/null || true
 
 echo "==> Creando la carpeta de música"
 mkdir -p "${TRACKER_DIR:-$HOME/Música/Tracker}"

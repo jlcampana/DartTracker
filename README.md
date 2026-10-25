@@ -20,6 +20,8 @@ curl -fsSL https://raw.githubusercontent.com/jlcampana/DartTracker/main/install.
 
 El script instala `openmpt123` y la biblioteca de SQLite (pide `sudo`), descarga el ejecutable de la
 última [release](https://github.com/jlcampana/DartTracker/releases) y lo deja en `~/.local/bin/darttracker`.
+También añade DartTracker al menú de aplicaciones, con su icono; al abrirlo desde ahí se lanza en
+la terminal predeterminada.
 Volver a ejecutar la misma línea lo actualiza. No hace falta tener Dart instalado. El comando se llama
 `darttracker`, así que puede convivir con el `tracker` de python-tracker.
 
