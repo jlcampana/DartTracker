@@ -1,0 +1,17 @@
+name: tracker
+description: Explorador de modarchive.org y reproductor de música tracker para la terminal.
+version: 1.0.0
+publish_to: none
+repository: https://github.com/jlcampana/tracker
+
+environment:
+  sdk: ^3.7.0
+
+dependencies:
+  crypto: ^3.0.6
+  # 2.x usa la libsqlite3 del sistema; la 3.x compila su propia copia con build hooks
+  # y ya no sale un único ejecutable.
+  sqlite3: 2.9.4
+
+dev_dependencies:
+  lints: ^6.0.0
