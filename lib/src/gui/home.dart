@@ -174,10 +174,10 @@ class _Sidebar extends StatelessWidget {
               child: ListView(
                 padding: const EdgeInsets.only(bottom: 12),
                 children: [
-                  header('Modarchive'),
-                  for (final s in exploreSections) tile(s),
                   header('Biblioteca'),
                   for (final s in librarySections) tile(s),
+                  header('Modarchive'),
+                  for (final s in exploreSections) tile(s),
                 ],
               ),
             ),

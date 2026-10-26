@@ -1,6 +1,6 @@
 name: darttracker
 description: Explorador de modarchive.org y reproductor de música tracker para el escritorio.
-version: 2.0.0
+version: 2.0.1
 publish_to: none
 repository: https://github.com/jlcampana/DartTracker
 

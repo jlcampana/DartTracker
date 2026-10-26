@@ -10,7 +10,7 @@ import 'library.dart';
 import 'modarchive.dart';
 import 'player.dart';
 
-const version = '2.0.0';
+const version = '2.0.1';
 
 final home = Platform.environment['HOME'] ?? '.';
 final musicDir = Platform.environment['TRACKER_DIR'] ?? '$home/Música/Tracker';
@@ -127,7 +127,8 @@ class Controller extends ChangeNotifier {
   void start() {
     Directory(musicDir).createSync(recursive: true);
     _ticker = Timer.periodic(const Duration(milliseconds: 500), (_) => _tick());
-    openSection('tophits');
+    // con canciones descargadas se arranca en la biblioteca, que no necesita conexión
+    openSection(lib.all().isEmpty ? 'tophits' : 'lib:0');
     scanLibrary();
   }
 
